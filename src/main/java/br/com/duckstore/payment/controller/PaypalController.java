@@ -22,7 +22,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/")
-public class PaymentController {
+public class PaypalController {
     public static final String PAYPAL_SUCCESS_URL = "pay/success";
     public static final String PAYPAL_CANCEL_URL = "pay/cancel";
 
@@ -31,31 +31,25 @@ public class PaymentController {
 
     private final PaypalService paypalService;
 
-    public PaymentController(PaypalService paypalService) {
+    public PaypalController(PaypalService paypalService) {
         this.paypalService = paypalService;
     }
 
-
-    @RequestMapping(method = RequestMethod.GET)
-    public String index(){
-        return "index";
-    }
-
     @RequestMapping(method = RequestMethod.POST, value = "pay")
-    public String pay(HttpServletRequest request){
+    public String pay(HttpServletRequest request) {
         String cancelUrl = URLUtils.getBaseURl(request) + "/" + PAYPAL_CANCEL_URL;
         String successUrl = URLUtils.getBaseURl(request) + "/" + PAYPAL_SUCCESS_URL;
         try {
             Payment payment = paypalService.createPayment(
-                  100.00,
+                    100.00,
                     "USD",
                     PaypalPaymentMethod.paypal,
                     PaypalPaymentIntent.sale,
                     "payment description",
                     cancelUrl,
                     successUrl);
-            for(Links links : payment.getLinks()){
-                if(links.getRel().equals("approval_url")){
+            for (Links links : payment.getLinks()) {
+                if (links.getRel().equals("approval_url")) {
                     return "redirect:" + links.getHref();
                 }
             }
@@ -64,18 +58,19 @@ public class PaymentController {
         }
         return "redirect:/";
     }
+
     @RequestMapping(method = RequestMethod.GET, value = PAYPAL_CANCEL_URL)
-    public String cancelPay(){
+    public String cancelPay() {
         return "cancel";
     }
 
     @GetMapping("payments")
-    public ResponseEntity<?> listPayments() {
+    public ResponseEntity<?> listPayments() throws PayPalRESTException {
         List<Payment> payments = paypalService.listAllPayments();
         return ResponseEntity.ok(payments);
     }
 
-    @GetMapping("/{paymentId}")
+    @GetMapping("payments/{paymentId}")
     public ResponseEntity<?> getPaymentDetails(@PathVariable String paymentId) {
         try {
             Payment payment = paypalService.getPaymentDetails(paymentId);
@@ -85,5 +80,4 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to get payment details.");
         }
     }
-
 }

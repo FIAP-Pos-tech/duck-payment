@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PaypalService {
@@ -31,6 +32,7 @@ public class PaypalService {
             String description,
             String cancelUrl,
             String successUrl) throws PayPalRESTException {
+        String id = UUID.randomUUID().toString();
         Amount amount = new Amount();
         BigDecimal totalBD = new BigDecimal(Double.toString(total)).setScale(2, RoundingMode.HALF_UP);
         String formattedTotal = totalBD.toString();
@@ -48,6 +50,7 @@ public class PaypalService {
         payer.setPaymentMethod(method.toString());
 
         Payment payment = new Payment();
+        payment.setId(id);
         payment.setIntent(intent.toString());
         payment.setPayer(payer);
         payment.setTransactions(transactions);
@@ -56,19 +59,20 @@ public class PaypalService {
         redirectUrls.setReturnUrl(successUrl);
         payment.setRedirectUrls(redirectUrls);
 
-
         allPayments.add(payment);
-        listAllPayments().addAll(allPayments);
 
         return payment.create(apiContext);
     }
 
-    public List<Payment> listAllPayments() {
+    public List<Payment> listAllPayments() throws PayPalRESTException{
         return allPayments;
     }
+
 
     public Payment getPaymentDetails(String paymentId) throws PayPalRESTException {
         return Payment.get(apiContext, paymentId);
     }
+
+
 
 }
